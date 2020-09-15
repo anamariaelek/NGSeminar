@@ -1,0 +1,125 @@
+---
+title: "NGSeminar"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, warning=FALSE, message=FALSE}
+library(lobstr)
+```
+
+# Variable bindings
+
+If you followed our introductory R webinar, you know how to create objects of different data types in R, and how to assign them to variables. 
+For example, here we create an integer vector `c(1,2,3)` and assign it to the variable called `v1`. We can then find the adress of the created object, i.e. the location in memory where it is stored.
+
+```{r}
+v1 <- c(1,2,3)
+obj_addr(v1)
+```
+
+If we modify the object we just created, what actully happens (in most of the cases) is that the object gets copied, and the copy is modified, while the original is unchanged.
+
+```{r}
+v1[1] <- 0
+obj_addr(v1)
+```
+
+The adress of the modified object is different from the original one. This **copy-on-modify** behaviour can, in case of large objects, slow down the code execution and quickly use up the available memory. To avoid this, we need to understand why and how exactly it happens.  
+
+When we created `v1`, what actually happened is that we created an integer vector and assigned it to a name `v1` - not the other way around! Even though we write the left-facing assignment arrow, pointing from object to the variable name, what actually happens is the oppossite - the name is a pointer (or a reference) to the object.
+
+```
+v1 -> c(1,2,3)
+```
+
+> The object (or value) doesn't have a name, it is actually the name that has a value.
+
+This subtle difference has important implications. First one is that assigning the same object to different variables doesn't create any copies. This is shown in the example below, where we assign previouly created vector `v1` to another variable, `v2`.
+
+```{r}
+v2 <- v1
+obj_addr(v1)
+obj_addr(v2)
+```
+
+You can see that the adress is the same. It's only once this object is changed that it gets copied, as we've seen above.  
+
+It's not just variables that that are pointers to the actual values - the elements of the lists are, too. This leads to the second important implications of reference binding in R, illustrated by the following example.
+
+```{r}
+l1 <- list(1,2,3)
+l2 <- l1
+l2[[1]] <- 0
+ref(l1,l2)
+```
+
+If  we create the following list `l1`, and then modify it, we see that the adress of the object is changed, i.e. it is copied, but the unchanged elements have the same adresses as before. This is because the created copy is a **shallow copy**, meaning that the list object and its bindings are copied, but the values pointed to by the bindings are not. 
+This is actually a very useful concept that was first introduced in R 3.1.0 (before that, all copies were deep copies, which was more memory inefficient). Since the elements of lists are references to values, the size of a list might be much smaller than you expect. Take the following example.
+
+```{r}
+x <- runif(1e6)
+y <- list(x1=x,x2=x,x3=x)
+obj_size(x)
+obj_size(y)
+ref(y)
+```
+
+The difference in the size of a vector of million random numbers and a list that contains this vector repeated three times is not three times bigger, as you might expect, because the list only contins pointers to the same vector.  
+
+Another extension of this are data frames. Look at the following example.
+
+```{r}
+d1 <- data.frame(x=c(1,2,3), y=c(4,5,6))
+d1
+ref(d1)
+```
+
+Because data frames are lists of columns, modifying value in column will only copy that single column, whereas modifying a row requires copying all the columns. 
+
+```{r}
+d2 <- d1
+d2[,1] <- d2[,1]+3
+ref(d1,d2)
+d3 <- d1
+d3[1,] <- d3[1,]+1
+ref(d1,d3)
+```
+
+The same is true for character vectors - repeating a character vector 100 times does not increase it's size 100 times, and this is because character vectors are pointers to unique strings in a global string pool.
+
+```{r}
+ch <- "character"
+obj_size(ch)
+obj_size(rep(ch,100))
+ref(rep(ch,2), character=TRUE)
+```
+
+
+To summarize the first part:  
+
+* variable names in R are references to values (objects), and multiple references can point to the same object in memory
+* elements of lists and character vectors are also references
+* modifying an object in most cases creates a deep copy of the object
+* modifying a list or character vector creates a shallow copy of the object because only the references are copied, not the value that they point to
+* therfore the size of lists and character vectors does not scale linearly when elements within them are pointer to the same values
+
+There are exceptions from general copy-on-modify bahaviour. Most notably, enviroments and objects with single bindings get modified without copying (modify-in-place), as well as objects of specific classes implemented in additional packages, such as `data.table`, illustrated below. This can lead to significant performance improvements, especially when working with large objects, but is out of scope of this webinar.
+
+```{r}
+dt <- data.table::setDT(d1)
+dt[,x:=x+1]
+ref(d1,dt)
+```
+
+# Functions
+
+R is a functionally-oriented programming language...
+
+```{r}
+
+```
+
+
+# Control flow
