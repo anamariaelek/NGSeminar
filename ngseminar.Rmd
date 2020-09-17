@@ -855,7 +855,7 @@ Here are some tips and tricks:
 
 * use specialized functions for specific tasks
 
-** `rowSums()`, `colSums()`, `rowMeans()`, and `colMeans()` are faster than equivalent `apply()` calls because they are vectorised
+`rowSums()`, `colSums()`, `rowMeans()`, and `colMeans()` are faster than equivalent `apply()` calls because they are vectorised
 
 ```{r}
 m <- matrix(runif(1e6),nrow=1000)
@@ -865,7 +865,7 @@ microbenchmark(
 )
 ```
 
-** to find the index of the minimum or maximum value, `which.min()` and `which.max()` functions can be orders of magnitude faster than `which(x == min(x))`
+`which.min()` and `which.max()` can be orders of magnitude faster than `which(x == min(x))` to find the index of the minimum or maximum value
 
 ```{r}
 x <- runif(1e5)

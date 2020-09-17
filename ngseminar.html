@@ -1550,11 +1550,11 @@ library(doParallel)</code></pre>
 <pre class="r"><code>v1 &lt;- c(1,2,3)
 require(lobstr)
 obj_addr(v1)</code></pre>
-<pre><code>## [1] &quot;0x208cd88&quot;</code></pre>
+<pre><code>## [1] &quot;0x1866d88&quot;</code></pre>
 <p>If we modify the object we just created, what actually happens (in most of the cases) is that the object gets copied, and the copy is modified, while the original is unchanged.</p>
 <pre class="r"><code>v1[1] &lt;- 0
 obj_addr(v1)</code></pre>
-<pre><code>## [1] &quot;0x4ef7288&quot;</code></pre>
+<pre><code>## [1] &quot;0x46cfb78&quot;</code></pre>
 <p>The address of the modified object is different from the original one. This <strong>copy-on-modify</strong> behavior can, in case of large objects, slow down the code execution and quickly use up the available memory. To avoid this, we need to understand why and how exactly it happens.</p>
 <p>When we created <code>v1</code>, what actually happened is that we created an integer vector and assigned it to a name <code>v1</code> - not the other way around! Even though we write the left-facing assignment arrow, pointing from object to the variable name, what actually happens is the opposite - the name is a pointer (or a reference) to the object.</p>
 <pre><code>v1 -&gt; c(1,2,3)</code></pre>
@@ -1564,24 +1564,24 @@ obj_addr(v1)</code></pre>
 <p>This subtle difference has important implications. First one is that assigning the same object to different variables doesn’t create any copies. This is shown in the example below, where we assign previously created vector <code>v1</code> to another variable, <code>v2</code>.</p>
 <pre class="r"><code>v2 &lt;- v1
 obj_addr(v1)</code></pre>
-<pre><code>## [1] &quot;0x4ef7288&quot;</code></pre>
+<pre><code>## [1] &quot;0x46cfb78&quot;</code></pre>
 <pre class="r"><code>obj_addr(v2)</code></pre>
-<pre><code>## [1] &quot;0x4ef7288&quot;</code></pre>
+<pre><code>## [1] &quot;0x46cfb78&quot;</code></pre>
 <p>You can see that the address is the same. It’s only once this object is changed that it gets copied, as we’ve seen above.</p>
 <p>It’s not just variables that that are pointers to the actual values - the elements of the lists are, too. This leads to the second important implications of reference binding in R, illustrated by the following example.</p>
 <pre class="r"><code>l1 &lt;- list(1,2,3)
 l2 &lt;- l1
 l2[[1]] &lt;- 0
 ref(l1,l2)</code></pre>
-<pre><code>## █ [1:0x62a8d08] &lt;list&gt; 
-## ├─[2:0x4ab6c38] &lt;double&gt; 
-## ├─[3:0x4ab6c00] &lt;double&gt; 
-## └─[4:0x4ab6bc8] &lt;double&gt; 
+<pre><code>## █ [1:0x5a815f8] &lt;list&gt; 
+## ├─[2:0x8d1de8] &lt;double&gt; 
+## ├─[3:0x8d1db0] &lt;double&gt; 
+## └─[4:0x8d1d78] &lt;double&gt; 
 ##  
-## █ [5:0x62e2b48] &lt;list&gt; 
-## ├─[6:0x4ab6ae8] &lt;double&gt; 
-## ├─[3:0x4ab6c00] 
-## └─[4:0x4ab6bc8]</code></pre>
+## █ [5:0x5abb438] &lt;list&gt; 
+## ├─[6:0x8d1c98] &lt;double&gt; 
+## ├─[3:0x8d1db0] 
+## └─[4:0x8d1d78]</code></pre>
 <p>If we create the following list <code>l1</code>, and then modify it, we see that the address of the object is changed, i.e. it is copied, but the unchanged elements have the same addresses as before. This is because the created copy is a <strong>shallow copy</strong>, meaning that the list object and its bindings are copied, but the values pointed to by the bindings are not. This is actually a very useful concept that was first introduced in R 3.1.0 (before that, all copies were deep copies, which was more memory inefficient). Since the elements of lists are references to values, the size of a list might be much smaller than you expect. Take the following example.</p>
 <pre class="r"><code>x &lt;- runif(1e6)
 y &lt;- list(x1=x,x2=x,x3=x)
@@ -1590,10 +1590,10 @@ obj_size(x)</code></pre>
 <pre class="r"><code>obj_size(y)</code></pre>
 <pre><code>## 8,000,488 B</code></pre>
 <pre class="r"><code>ref(y)</code></pre>
-<pre><code>## █ [1:0x6901e98] &lt;list&gt; 
-## ├─x1 = [2:0x7f883d906010] &lt;double&gt; 
-## ├─x2 = [2:0x7f883d906010] 
-## └─x3 = [2:0x7f883d906010]</code></pre>
+<pre><code>## █ [1:0x60da788] &lt;list&gt; 
+## ├─x1 = [2:0x7fe9cb508010] &lt;double&gt; 
+## ├─x2 = [2:0x7fe9cb508010] 
+## └─x3 = [2:0x7fe9cb508010]</code></pre>
 <p>The difference in the size of a vector of million random numbers and a list that contains this vector repeated three times is not three times bigger, as you might expect, because the list only contains pointers to the same vector.</p>
 <p>Another extension of this are data frames. Look at the following example.</p>
 <pre class="r"><code>d1 &lt;- data.frame(x=c(1,2,3), y=c(4,5,6))
@@ -1606,23 +1606,23 @@ d1</code></pre>
 <pre class="r"><code>d2 &lt;- d1
 d2[,1] &lt;- d2[,1]+3
 ref(d1,d2)</code></pre>
-<pre><code>## █ [1:0x2210108] &lt;list&gt; 
-## ├─x = [2:0x67b9438] &lt;double&gt; 
-## └─y = [3:0x67b93e8] &lt;double&gt; 
+<pre><code>## █ [1:0x19c2d08] &lt;list&gt; 
+## ├─x = [2:0x61981e8] &lt;double&gt; 
+## └─y = [3:0x6198198] &lt;double&gt; 
 ##  
-## █ [4:0x68c0ec8] &lt;list&gt; 
-## ├─x = [5:0x6b8cd08] &lt;double&gt; 
-## └─y = [3:0x67b93e8]</code></pre>
+## █ [4:0x6099738] &lt;list&gt; 
+## ├─x = [5:0x3ecb8a8] &lt;double&gt; 
+## └─y = [3:0x6198198]</code></pre>
 <pre class="r"><code>d3 &lt;- d1
 d3[1,] &lt;- d3[1,]+1
 ref(d1,d3)</code></pre>
-<pre><code>## █ [1:0x2210108] &lt;list&gt; 
-## ├─x = [2:0x67b9438] &lt;double&gt; 
-## └─y = [3:0x67b93e8] &lt;double&gt; 
+<pre><code>## █ [1:0x19c2d08] &lt;list&gt; 
+## ├─x = [2:0x61981e8] &lt;double&gt; 
+## └─y = [3:0x6198198] &lt;double&gt; 
 ##  
-## █ [4:0x6bc99a8] &lt;list&gt; 
-## ├─x = [5:0x6bda8c8] &lt;double&gt; 
-## └─y = [6:0x6bda878] &lt;double&gt;</code></pre>
+## █ [4:0x63a3048] &lt;list&gt; 
+## ├─x = [5:0x63b3fa8] &lt;double&gt; 
+## └─y = [6:0x63b3f58] &lt;double&gt;</code></pre>
 <p>The similar is true for character vectors - repeating a character vector 100 times does not increase its size 100 times, and this is because character vectors are pointers to unique strings in a global string pool.</p>
 <pre class="r"><code>ch &lt;- &quot;character&quot;
 obj_size(ch)</code></pre>
@@ -1630,19 +1630,19 @@ obj_size(ch)</code></pre>
 <pre class="r"><code>obj_size(rep(ch,100))</code></pre>
 <pre><code>## 912 B</code></pre>
 <pre class="r"><code>ref(rep(ch,2), character=TRUE)</code></pre>
-<pre><code>## █ [1:0x6c5f2d8] &lt;character&gt; 
-## ├─[2:0xfc3d58] &lt;string: &quot;character&quot;&gt; 
-## └─[2:0xfc3d58]</code></pre>
+<pre><code>## █ [1:0x6438978] &lt;character&gt; 
+## ├─[2:0x79dd58] &lt;string: &quot;character&quot;&gt; 
+## └─[2:0x79dd58]</code></pre>
 <p>So, R will in principle copy most of the objects when you modify them - and this will take time and memory, especially for large objects. However, list and columns in data frame, which essentially are lists, as well as character vectors, contain elements which are just pointers to the actual values and will only make shallow copies. Therefore the size of lists and character vectors does not scale linearly when elements within them are pointers to the same values.</p>
 <p>There are several exceptions from general copy-on-modify behavior. Most notably, environments and objects with single bindings get modified without copying (modify-in-place), as well as objects of specific classes implemented in additional packages, such as <code>data.table</code>, illustrated below. This can lead to significant performance improvements, especially when working with large objects, but is out of scope of this webinar.</p>
 <pre class="r"><code>dt &lt;- data.table::setDT(d1)
 dt[,x:=x+1]
 ref(d1,dt)</code></pre>
-<pre><code>## █ [1:0x6cd9c20] &lt;list&gt; 
-## ├─x = [2:0x6ec1488] &lt;double&gt; 
-## └─y = [3:0x67b93e8] &lt;double&gt; 
+<pre><code>## █ [1:0x64b3300] &lt;list&gt; 
+## ├─x = [2:0x669ab68] &lt;double&gt; 
+## └─y = [3:0x6198198] &lt;double&gt; 
 ##  
-## [1:0x6cd9c20]</code></pre>
+## [1:0x64b3300]</code></pre>
 <p>Pause for thought: remember the vector we created at the beginning <code>v1 &lt;- c(1,2,3)</code>? Then we modified it, which now you know means that R made a copy of it and moved the pointer <code>v1</code> to the new vector <code>v1 &lt;- c(0,2,3)</code>. What do you think happened to the <code>c(1,2,3)</code> which is now without a name?</p>
 <p>It would be very bad of R to keep this type of objects in memory, that’s why there is a <strong>garbage collector (GC)</strong> that runs in the background and frees up the memory by removing these kind of objects without any bindings. While this is very good, memory wise, it still takes up computing resources and affects the speed of code execution - therefore, take home message: best to avoid making R make copies altogether!</p>
 </div>
@@ -1812,7 +1812,7 @@ f7(1)</code></pre>
 <pre><code>## [1] 1</code></pre>
 <pre class="r"><code>f7(&quot;word&quot;)</code></pre>
 <pre><code>## Warning in f7(&quot;word&quot;): x is not numeric, returning random x</code></pre>
-<pre><code>## [1] 0.6574253</code></pre>
+<pre><code>## [1] 0.2548976</code></pre>
 </div>
 </div>
 <div id="control-flow" class="section level1">
@@ -2093,10 +2093,10 @@ lapply(X = v, FUN = mean)</code></pre>
 ## [1] 5
 ## 
 ## $B
-## [1] 66.9
+## [1] 53.2
 ## 
 ## $C
-## [1] 0.4855328</code></pre>
+## [1] 0.4688741</code></pre>
 <p><code>sapply()</code> works similarly, but it can additionally take two more logical arguments:</p>
 <ul>
 <li><code>simplify</code> determines whether the output should be simplified to a vector, matrix or array, if possible (otherwise the output is always a list)</li>
@@ -2104,21 +2104,21 @@ lapply(X = v, FUN = mean)</code></pre>
 </ul>
 <pre class="r"><code>sapply(X = v, FUN = mean)</code></pre>
 <pre><code>##          A          B          C 
-##  5.0000000 66.9000000  0.4855328</code></pre>
+##  5.0000000 53.2000000  0.4688741</code></pre>
 <p>Generally, it’s sometimes hard to predict the structure of the simplified output produced by <code>sapply()</code>, so it’s safer to use <code>lapply()</code>. Another alternative is to use <code>vapply()</code>, which is similar to <code>sapply()</code>, but it has a pre-specified type of return value, so it can be safer (and sometimes faster) to use. With <code>vapply()</code> you specify the expected structure that each iteration of <code>FUN</code> needs to return - this is given as a <code>FUN.VALUE</code> argument, and the function will check that all values returned by applying <code>FUN</code> to elements of <code>X</code> are compatible with the <code>FUN.VALUE</code>, in that they must have the same length and type.</p>
 <pre class="r"><code>fv &lt;- vector(mode = &quot;numeric&quot;, length = 1)
 vapply(X = v, FUN = mean, FUN.VALUE = fv)</code></pre>
 <pre><code>##          A          B          C 
-##  5.0000000 66.9000000  0.4855328</code></pre>
+##  5.0000000 53.2000000  0.4688741</code></pre>
 <pre class="r"><code>fv &lt;- summary(v$A)
 vapply(X = v, FUN = summary, FUN.VALUE = fv)</code></pre>
-<pre><code>##            A      B          C
-## Min.     0.0   2.00 0.08484536
-## 1st Qu.  2.5  60.75 0.23460588
-## Median   5.0  72.50 0.60273870
-## Mean     5.0  66.90 0.48553280
-## 3rd Qu.  7.5  93.25 0.62076948
-## Max.    10.0 100.00 0.91678673</code></pre>
+<pre><code>##            A     B          C
+## Min.     0.0   1.0 0.08907975
+## 1st Qu.  2.5  20.0 0.21898729
+## Median   5.0  52.5 0.41092825
+## Mean     5.0  53.2 0.46887409
+## 3rd Qu.  7.5  89.0 0.67878894
+## Max.    10.0 100.0 0.98404147</code></pre>
 </div>
 <div id="tapply" class="section level3">
 <h3><code>tapply()</code></h3>
@@ -2132,7 +2132,7 @@ vapply(X = v, FUN = summary, FUN.VALUE = fv)</code></pre>
 y &lt;- sample(LETTERS[1:3], 100, replace=TRUE)
 tapply(x, y, mean)</code></pre>
 <pre><code>##         A         B         C 
-## 0.4879996 0.5948901 0.4824484</code></pre>
+## 0.5018479 0.4278079 0.5445769</code></pre>
 </div>
 <div id="mapply" class="section level3">
 <h3><code>mapply()</code></h3>
@@ -2151,8 +2151,8 @@ mapply(sum, x, y)</code></pre>
 <pre class="r"><code>x &lt;- list(A=runif(10), B=LETTERS[1:4], c=matrix(1:9,nrow=3))
 x</code></pre>
 <pre><code>## $A
-##  [1] 0.7892002 0.4528555 0.2597222 0.1798078 0.9416174 0.5884770 0.4450651
-##  [8] 0.3379847 0.3690319 0.4583054
+##  [1] 0.93630408 0.46466518 0.32551258 0.20592893 0.24238955 0.60046641
+##  [7] 0.77801250 0.14483100 0.94015553 0.03942222
 ## 
 ## $B
 ## [1] &quot;A&quot; &quot;B&quot; &quot;C&quot; &quot;D&quot;
@@ -2164,7 +2164,7 @@ x</code></pre>
 ## [3,]    3    6    9</code></pre>
 <pre class="r"><code>rapply(x, mean, classes=c(&quot;integer&quot;,&quot;numeric&quot;), how=&quot;replace&quot;)</code></pre>
 <pre><code>## $A
-## [1] 0.4822067
+## [1] 0.4677688
 ## 
 ## $B
 ## [1] &quot;A&quot; &quot;B&quot; &quot;C&quot; &quot;D&quot;
@@ -2176,7 +2176,7 @@ x</code></pre>
 ## [3,]    3    6    9</code></pre>
 <pre class="r"><code>rapply(x, mean, classes=c(&quot;integer&quot;,&quot;numeric&quot;), how=&quot;list&quot;, deflt=NA)</code></pre>
 <pre><code>## $A
-## [1] 0.4822067
+## [1] 0.4677688
 ## 
 ## $B
 ## [1] NA
@@ -2185,7 +2185,7 @@ x</code></pre>
 ## [1] NA</code></pre>
 <pre class="r"><code>rapply(x, mean, classes=c(&quot;integer&quot;,&quot;numeric&quot;), how=&quot;unlist&quot;, deflt=NA)</code></pre>
 <pre><code>##         A         B         c 
-## 0.4822067        NA        NA</code></pre>
+## 0.4677688        NA        NA</code></pre>
 <hr />
 <p>Now we have explained what functionals exist in R and how they can be used to iterate in various specialized cases. Because they are very specific, they are usually faster than loops and you should generally use them instead of loops, when possible.<br />
 Even with functionals, you might find yourself frustrated at how slowly your R code runs if you perform heavy computations or analyze large data with many iterations. Luckily, there is another way that you can resort to, and this is parallelization that we cover next.</p>
@@ -2204,16 +2204,16 @@ Even with functionals, you might find yourself frustrated at how slowly your R c
 v &lt;- replicate(n=4, expr=rnorm(1e3), simplify=FALSE)
 mclapply(v, mean, mc.cores=4)</code></pre>
 <pre><code>## [[1]]
-## [1] 0.01006193
+## [1] -0.03918329
 ## 
 ## [[2]]
-## [1] 0.001384343
+## [1] -0.04476519
 ## 
 ## [[3]]
-## [1] 0.006545113
+## [1] 0.02913301
 ## 
 ## [[4]]
-## [1] -0.02318395</code></pre>
+## [1] 0.01204112</code></pre>
 <p>Note that you can’t use <code>mclapply</code> with <code>mc.cores</code> &gt; 1 on Windows, because the underlying mechanism it uses to split processes (called forking) only works for UNIX-like systems.</p>
 <p>One major difference between parallel implementation of <code>mclapply()</code> and sequential <code>lapply()</code> is that in the parallelized version, any of the independent iterations can fail with error, and the ones that were successfully calculated will still be returned in the results, while in serial functions all iterations need to finish without errors in order to get the result.</p>
 <pre class="r"><code>res &lt;- mclapply(1:4, function(i) {
@@ -2248,16 +2248,16 @@ mclapply(v, mean, mc.cores=4)</code></pre>
 clusterExport(cl, &quot;v&quot;)
 parLapply(cl=cl, X=v, fun=mean)</code></pre>
 <pre><code>## [[1]]
-## [1] 0.01006193
+## [1] -0.03918329
 ## 
 ## [[2]]
-## [1] 0.001384343
+## [1] -0.04476519
 ## 
 ## [[3]]
-## [1] 0.006545113
+## [1] 0.02913301
 ## 
 ## [[4]]
-## [1] -0.02318395</code></pre>
+## [1] 0.01204112</code></pre>
 <pre class="r"><code>stopCluster(cl)</code></pre>
 <hr />
 <p>These are the two ways to make your <code>lapply()</code> and friends functionals parallel (check out also <code>parApply()</code>,<code>parSapply()</code>).<br />
@@ -2273,31 +2273,31 @@ require(doParallel)</code></pre>
 registerDoParallel(cl)
 foreach(i=v) %dopar% mean(i)</code></pre>
 <pre><code>## [[1]]
-## [1] 0.01006193
+## [1] -0.03918329
 ## 
 ## [[2]]
-## [1] 0.001384343
+## [1] -0.04476519
 ## 
 ## [[3]]
-## [1] 0.006545113
+## [1] 0.02913301
 ## 
 ## [[4]]
-## [1] -0.02318395</code></pre>
+## [1] 0.01204112</code></pre>
 <pre class="r"><code>stopCluster(cl)</code></pre>
 <p>…or forking implicitly and only specifying the number of cores.</p>
 <pre class="r"><code>registerDoParallel(cores=2)
 foreach(i=v) %dopar% mean(i)</code></pre>
 <pre><code>## [[1]]
-## [1] 0.01006193
+## [1] -0.03918329
 ## 
 ## [[2]]
-## [1] 0.001384343
+## [1] -0.04476519
 ## 
 ## [[3]]
-## [1] 0.006545113
+## [1] 0.02913301
 ## 
 ## [[4]]
-## [1] -0.02318395</code></pre>
+## [1] 0.01204112</code></pre>
 <p>The syntax of parallel loop is petty straight forward. Apart from looping like a regular <code>for</code>, and because it is a function, <code>foreach</code> outputs its results - you don’t need pre-allocated object to save them to, you just assign it to a variable. <code>foreach</code> can also take additional arguments that define e.g. variables and packages to export to workers, how the results will be combined etc. See the documentation of <code>foreach()</code> for details.</p>
 </div>
 <div id="to-parallelize-or-not" class="section level3">
@@ -2323,8 +2323,8 @@ microbenchmark(
 )</code></pre>
 <pre><code>## Unit: milliseconds
 ##    expr       min        lq      mean    median        uq       max neval
-##  ci_seq  57.29995  57.29995  57.29995  57.29995  57.29995  57.29995     1
-##  ci_par 776.09382 776.09382 776.09382 776.09382 776.09382 776.09382     1</code></pre>
+##  ci_seq  105.1421  105.1421  105.1421  105.1421  105.1421  105.1421     1
+##  ci_par 1113.6292 1113.6292 1113.6292 1113.6292 1113.6292 1113.6292     1</code></pre>
 <p>Look at that! Parallelized version took longer to compute than the sequential! That is an important lesson - before attempting to parallelize everything you do, you need to consider whether there is actually any gain from this - if more time is spent on distributing resources and tasks, and merging outputs afterwards, the parallelization could be slower than serial computation.</p>
 <p>One clear advantage of serial computations is that it allows you to better keep track on memory. When executing parallel jobs it’s important to estimate how much memory all of the processes will require and make sure this is less than the total amount of memory on your computer. Otherwise, the parallel workers just die when they run out of memory, and you don’t even get an error message, only the wrong/incomplete output!</p>
 <hr />
@@ -2338,29 +2338,32 @@ Here are some tips and tricks:</p>
 <ul>
 <li>use specialized functions for specific tasks</li>
 </ul>
-<p>** <code>rowSums()</code>, <code>colSums()</code>, <code>rowMeans()</code>, and <code>colMeans()</code> are faster than equivalent <code>apply()</code> calls because they are vectorised</p>
+<p><code>rowSums()</code>, <code>colSums()</code>, <code>rowMeans()</code>, and <code>colMeans()</code> are faster than equivalent <code>apply()</code> calls because they are vectorised</p>
 <pre class="r"><code>m &lt;- matrix(runif(1e6),nrow=1000)
 microbenchmark(
   rowSums(m),
   apply(m, 1, sum)
 )</code></pre>
 <pre><code>## Unit: milliseconds
-##              expr      min        lq      mean    median        uq      max
-##        rowSums(m) 1.785686  1.800399  1.835388  1.818896  1.852166  2.12343
-##  apply(m, 1, sum) 9.742394 11.989372 14.694237 13.489595 16.033237 60.79568
+##              expr       min        lq      mean    median        uq       max
+##        rowSums(m)  1.790073  1.834332  2.877283  1.864737  1.896769  51.29938
+##  apply(m, 1, sum) 10.284695 13.548318 31.214611 15.097180 62.665005 113.34540
 ##  neval
 ##    100
 ##    100</code></pre>
-<p>** to find the index of the minimum or maximum value, <code>which.min()</code> and <code>which.max()</code> functions can be orders of magnitude faster than <code>which(x == min(x))</code></p>
+<p><code>which.min()</code> and <code>which.max()</code> can be orders of magnitude faster than <code>which(x == min(x))</code> to find the index of the minimum or maximum value</p>
 <pre class="r"><code>x &lt;- runif(1e5)
 microbenchmark( 
   which(x == min(x)),
   which.min(x) 
 )</code></pre>
 <pre><code>## Unit: microseconds
-##                expr     min       lq      mean   median       uq      max neval
-##  which(x == min(x)) 367.649 380.1035 580.75316 560.7465 565.4130 6325.730   100
-##        which.min(x)  92.094  92.4660  93.84886  93.0950  93.3815  114.145   100</code></pre>
+##                expr     min       lq       mean   median       uq       max
+##  which(x == min(x)) 368.828 386.1625 1025.71210 565.3155 573.1195 49816.953
+##        which.min(x)  92.060  92.8320   94.45625  93.6825  94.2220   110.165
+##  neval
+##    100
+##    100</code></pre>
 <ul>
 <li><code>unlist(x, use.names=FALSE)</code> is much faster than <code>unlist(x)</code> because the names are an overhead, and the in the latter approach time is spent on perserving names, checking that they are unique, and making them unique if they are not</li>
 </ul>
@@ -2371,12 +2374,12 @@ microbenchmark(
   unlist(x, use.names=FALSE)
 )</code></pre>
 <pre><code>## Unit: microseconds
-##                          expr     min       lq     mean  median       uq
-##                     unlist(x) 448.608 452.6580 475.1287 457.225 487.7850
-##  unlist(x, use.names = FALSE)  92.116  92.9695 103.6509  93.733 105.0875
-##      max neval
-##  550.923   100
-##  147.912   100</code></pre>
+##                          expr     min       lq     mean   median       uq
+##                     unlist(x) 450.532 456.0295 991.7861 467.5195 531.0130
+##  unlist(x, use.names = FALSE)  92.929  94.2990 604.2207  96.1735 133.9485
+##       max neval
+##  49915.72   100
+##  49579.12   100</code></pre>
 <ul>
 <li><p><code>readr::read_csv()</code> or <code>data.table::fread()</code> are considerably faster than <code>read.csv()</code>, and for many statistical functions there is a faster implementation in <code>Rfast</code> package - this is purely an under-the-hood implementation thing, but the point is, learn about different packages!</p></li>
 <li><p>use matrix algebra to solve your problems whenever possible - because these operations are performed by highly tuned libraries of externally implemented functions, they are very fast (e.g. matrix multiplication to calculate intersection)</p></li>
